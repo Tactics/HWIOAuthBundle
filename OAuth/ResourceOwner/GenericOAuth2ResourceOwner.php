@@ -31,13 +31,17 @@ class GenericOAuth2ResourceOwner extends AbstractResourceOwner
     public function getUserInformation(array $accessToken, array $extraParameters = array())
     {
         if ($this->options['use_bearer_authorization']) {
-            $content = $this->httpRequest($this->normalizeUrl($this->options['infos_url'], $extraParameters), null, array('Authorization: Bearer '.$accessToken['access_token']));
+            $content1 = $this->httpRequest($this->normalizeUrl('https://www.mydigipass.com/oauth/user_data', $extraParameters), null, array('Authorization: Bearer '.$accessToken['access_token']));
+            $content2 = $this->httpRequest($this->normalizeUrl('https://www.mydigipass.com/oauth/eid_data', $extraParameters), null, array('Authorization: Bearer '.$accessToken['access_token']));
         } else {
-            $content = $this->doGetUserInformationRequest($this->normalizeUrl($this->options['infos_url'], array_merge(array($this->options['attr_name'] => $accessToken['access_token']), $extraParameters)));
+            $content1 = $this->doGetUserInformationRequest($this->normalizeUrl('https://www.mydigipass.com/oauth/user_data', array_merge(array($this->options['attr_name'] => $accessToken['access_token']), $extraParameters)));
+            $content2 = $this->doGetUserInformationRequest($this->normalizeUrl('https://www.mydigipass.com/oauth/eid_data', array_merge(array($this->options['attr_name'] => $accessToken['access_token']), $extraParameters)));
         }
 
+        $content = array_merge(json_decode($content1->getContent(), true), json_decode($content2->getContent(), true));
+
         $response = $this->getUserResponse();
-        $response->setResponse($content->getContent());
+        $response->setResponse($content);
 
         $response->setResourceOwner($this);
         $response->setOAuthToken(new OAuthToken($accessToken));
